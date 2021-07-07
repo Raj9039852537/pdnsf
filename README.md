@@ -1,5 +1,5 @@
 # personalDNSfilter
-
+just a fork go to original for latest code 
 See http://www.zenz-solutions.de/personaldnsfilter for details
 
 [<img src="https://f-droid.org/badge/get-it-on.png"
