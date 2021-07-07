@@ -78,4 +78,4 @@ public abstract class ConfigurationAccess {
 
     abstract public void releaseWakeLock() throws IOException;
 
-}
+} 
