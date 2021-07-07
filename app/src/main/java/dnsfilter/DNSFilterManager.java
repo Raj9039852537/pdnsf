@@ -1496,4 +1496,4 @@ public class DNSFilterManager extends ConfigurationAccess  {
 		//return true;
 	}
 
-}
+} 
