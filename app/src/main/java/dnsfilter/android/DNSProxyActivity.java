@@ -105,6 +105,7 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 	protected static CheckBox advancedConfigCheck;
 	protected static CheckBox editFilterLoadCheck;
 	protected static CheckBox editAdditionalHostsCheck;
+	protected static CheckBox editDnsConfCheck;
 	protected static CheckBox backupRestoreCheck;
 	protected static Button backupBtn;
 	protected static Button restoreBtn;
@@ -128,6 +129,7 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 	protected static EditText filterReloadIntervalView;
 	protected static FilterConfig filterCfg;
 	protected static EditText additionalHostsField;
+	protected static EditText dnsConfField;
 	protected static TextView scrollLockField;
 	protected static Dialog advDNSConfigDia;
 	protected static CheckBox manualDNSCheck;
@@ -146,6 +148,7 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 
 
 	protected static boolean additionalHostsChanged = false;
+	protected static boolean dnsConfChanged = false;
 	protected static SuppressRepeatingsLogger myLogger;
 
 	protected ScrollView scrollView = null;
@@ -527,6 +530,11 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 			editAdditionalHostsCheck.setChecked(checked);
 			editAdditionalHostsCheck.setOnClickListener(this);
 
+			checked = editDnsConfCheck != null && editDnsConfCheck.isChecked();
+			editDnsConfCheck = (CheckBox) findViewById(R.id.editAdditionalHosts);
+			editDnsConfCheck.setChecked(checked);
+			editDnsConfCheck.setOnClickListener(this);
+
 			appWhiteListScroll = (ScrollView) findViewById(R.id.appWhiteListScroll);
 			String whitelistedApps = "";
 			if (appSelector != null) {
@@ -542,6 +550,13 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 			additionalHostsField = (EditText) findViewById(R.id.additionalHostsField);
 			additionalHostsField.setText(uiText);
 			additionalHostsField.addTextChangedListener(this);
+
+			if (dnsConfField != null)
+				uiText = dnsConfField.getText().toString();
+
+			dnsConfField = (EditText) findViewById(R.id.dnsConfField);
+			dnsConfField.setText(uiText);
+			dnsConfField.addTextChangedListener(this);
 
 			findViewById(R.id.copyfromlog).setVisibility(View.GONE);
 
@@ -783,7 +798,20 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 		}
 	}
 
-
+	protected void loaddnsConf() {
+		try {
+			byte[] content = CONFIG.readConfig();
+			if (content == null) {
+				dnsConfField.setText(ADDITIONAL_HOSTS_TO_LONG);
+				dnsConfField.setEnabled(false);
+				return;
+			}
+			dnsConfField.setText(new String(content));
+			dnsConfChanged = false;
+		} catch (IOException eio) {
+			Logger.getLogger().logLine("Can not load /PersonalDNSFilter/dnsfilter.conf!\n" + eio.toString());
+		}
+	}
 	protected boolean persistAdditionalHosts() {
 		String addHostsTxt = additionalHostsField.getText().toString();
 		if (!addHostsTxt.equals("") && !addHostsTxt.equals(ADDITIONAL_HOSTS_TO_LONG)) {
@@ -1218,7 +1246,7 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 		if (destination == reloadFilterBtn)
 			handlefilterReload();
 
-		if (destination == advancedConfigCheck || destination == editAdditionalHostsCheck || destination == editFilterLoadCheck || destination == appWhiteListCheck || destination == backupRestoreCheck) {
+		if (destination == advancedConfigCheck || destination == editAdditionalHostsCheck || destination == editDnsConfCheck || destination == editFilterLoadCheck || destination == appWhiteListCheck || destination == backupRestoreCheck) {
 			handleAdvancedConfig((CheckBox)destination);
 		}
 
@@ -1397,12 +1425,15 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 			rootModeCheck.setVisibility(View.VISIBLE);
 			enableCloakProtectCheck.setVisibility(View.VISIBLE);
 			editAdditionalHostsCheck.setVisibility(View.VISIBLE);
+			editDnsConfCheck.setVisibility(View.VISIBLE);
 			editFilterLoadCheck.setVisibility(View.VISIBLE);
 			backupRestoreCheck.setVisibility(View.VISIBLE);
 
 			if (dest == null) {
 				if (editAdditionalHostsCheck.isChecked())
 					dest = editAdditionalHostsCheck;
+				else if (editDnsConfCheck.isChecked())
+					dest = editDnsConfCheck;
 				else if (editFilterLoadCheck.isChecked())
 					dest = editFilterLoadCheck;
 				else if (backupRestoreCheck.isChecked())
@@ -1423,6 +1454,10 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 						editAdditionalHostsCheck.setChecked(false);
 						editAdditionalHostsCheck.setVisibility(View.GONE);
 					}
+					if (dest != editDnsConfCheck) {
+						editDnsConfCheck.setChecked(false);
+						editDnsConfCheck.setVisibility(View.GONE);
+					}
 					if (dest != editFilterLoadCheck) {
 						editFilterLoadCheck.setChecked(false);
 						editFilterLoadCheck.setVisibility(View.GONE);
@@ -1442,6 +1477,7 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 					rootModeCheck.setVisibility(View.VISIBLE);
 					enableCloakProtectCheck.setVisibility(View.VISIBLE);
 					editAdditionalHostsCheck.setVisibility(View.VISIBLE);
+					editDnsConfCheck.setVisibility(View.VISIBLE);
 					editFilterLoadCheck.setVisibility(View.VISIBLE);
 					if (appWhitelistingEnabled) appWhiteListCheck.setVisibility(View.VISIBLE);
 					backupRestoreCheck.setVisibility(View.VISIBLE);
@@ -1488,6 +1524,14 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 				additionalHostsChanged = false;
 				findViewById(R.id.addHostsScroll).setVisibility(View.GONE);
 			}
+			if (editDnsConfCheck.isChecked()) {
+				loaddnsConf();
+				findViewById(R.id.addHostsScroll).setVisibility(View.VISIBLE);
+			} else {
+				dnsConfField.setText("");
+				dnsConfChanged = false;
+				findViewById(R.id.addHostsScroll).setVisibility(View.GONE);
+			}
 		} else {
 			setVisibilityForAdvCfg(View.VISIBLE);
 			findViewById(R.id.filtercfgview).setVisibility(View.GONE);
@@ -1498,11 +1542,15 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 			appSelector.clear();
 			findViewById(R.id.backupRestoreView).setVisibility(View.GONE);
 			editAdditionalHostsCheck.setChecked(false);
+			editDnsConfCheck.setChecked(false);
 			editFilterLoadCheck.setChecked(false);
 			backupRestoreCheck.setChecked(false);
 			editAdditionalHostsCheck.setChecked(false);
+			editDnsConfCheck.setChecked(false);
 			additionalHostsField.setText("");
+			dnsConfField.setText("");
 			additionalHostsChanged = false;
+			dnsConfChanged = false;
 		}
 	}
 
@@ -1627,6 +1675,10 @@ public class DNSProxyActivity extends Activity implements OnClickListener, Logge
 		additionalHostsChanged = true;
 	}
 
+	@Override
+	public void afterTextChanged(Editable s) {
+		dnsConfChanged = true;
+	}
 
 	@Override
 	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
