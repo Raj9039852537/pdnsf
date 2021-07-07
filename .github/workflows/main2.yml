@@ -31,8 +31,8 @@ jobs:
         java-version: 1.8
     - name: Build Debug APK
       run: ./gradlew assembleRelease
-      run: ls -R
-              
+           ls -R
+             
     - name: Upload APK
       uses: actions/upload-artifact@v2
       with:
